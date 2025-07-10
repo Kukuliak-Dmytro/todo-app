@@ -6,7 +6,8 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
-router.post("/todos/:id/invite", invite);
+// Global invite: invite to all todos of the inviter
+router.post("/invite", invite);
 router.get("/invites", listInvites);
 router.post("/invites/:id/respond", respondInvite);
 router.get("/shared-todos", listSharedTodos);
