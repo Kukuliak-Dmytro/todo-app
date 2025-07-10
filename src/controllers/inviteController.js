@@ -37,6 +37,7 @@ export const invite = async (req, res) => {
     });
     res.status(201).json(invite);
   } catch (err) {
+    console.error(err);
     if (err.name === "ZodError") {
       return res.status(400).json({ errors: formatZodError(err) });
     }
@@ -46,13 +47,19 @@ export const invite = async (req, res) => {
 
 export const listInvites = async (req, res) => {
   try {
-    const invites = await prisma.todoShare.findMany({
-      where: { invitedUserEmail: req.user.email },
+    const sentInvites = await prisma.todoShare.findMany({
+      where: { inviterUserId: req.user.userId },
+      orderBy: { createdAt: "desc" },
+      include: { inviter: true }, // removed invitedUser
+    });
+    const pendingInvites = await prisma.todoShare.findMany({
+      where: { invitedUserEmail: req.user.email, status: "PENDING" },
       orderBy: { createdAt: "desc" },
       include: { inviter: true },
     });
-    res.json(invites);
+    res.json({ sent: sentInvites, pending: pendingInvites });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -70,6 +77,7 @@ export const respondInvite = async (req, res) => {
     const updated = await prisma.todoShare.update({ where: { id: inviteId }, data: { status } });
     res.json(updated);
   } catch (err) {
+    console.error(err);
     if (err.name === "ZodError") {
       return res.status(400).json({ errors: formatZodError(err) });
     }
@@ -95,6 +103,7 @@ export const listSharedTodos = async (req, res) => {
     }
     res.json(todos);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 }; 
