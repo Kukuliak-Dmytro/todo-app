@@ -120,13 +120,23 @@ All protected endpoints require an `Authorization: Bearer <accessToken>` header.
 
 ### List My Invites
 - `GET /invites`
-- Response: `[Invite, ...]` (includes inviter info)
+- Response:
+  ```json
+  {
+    "sent": [Invite, ...],      // All invites you have sent
+    "received": [Invite, ...]   // All invites you have received
+  }
+  ```
+- Each invite includes inviter info.
 
 ### Respond to Invite
 - `POST /invites/:id/respond`
 - Body: `{ "status": "ACCEPTED" }` or `{ "status": "REJECTED" }`
-- Response: Updated invite object
+- Response:
+  - If accepted: Updated invite object
+  - If rejected: `{ "message": "Invite rejected and deleted." }`
 - Only the invited user can respond.
+- If rejected, the invite is deleted from the database and will no longer appear in your received invites.
 
 ### List Todos Shared With Me
 - `GET /shared-todos`

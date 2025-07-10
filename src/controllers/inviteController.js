@@ -50,14 +50,14 @@ export const listInvites = async (req, res) => {
     const sentInvites = await prisma.todoShare.findMany({
       where: { inviterUserId: req.user.userId },
       orderBy: { createdAt: "desc" },
-      include: { inviter: true }, // removed invitedUser
+      include: { inviter: true },
     });
-    const pendingInvites = await prisma.todoShare.findMany({
-      where: { invitedUserEmail: req.user.email, status: "PENDING" },
+    const receivedInvites = await prisma.todoShare.findMany({
+      where: { invitedUserEmail: req.user.email },
       orderBy: { createdAt: "desc" },
       include: { inviter: true },
     });
-    res.json({ sent: sentInvites, pending: pendingInvites });
+    res.json({ sent: sentInvites, received: receivedInvites });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -73,9 +73,14 @@ export const respondInvite = async (req, res) => {
     if (!invite) return res.status(404).json({ error: "Invite not found" });
     if (invite.invitedUserEmail !== req.user.email) return res.status(403).json({ error: "Not your invite" });
     if (invite.status !== "PENDING") return res.status(400).json({ error: "Invite already responded to" });
-    // Update status
-    const updated = await prisma.todoShare.update({ where: { id: inviteId }, data: { status } });
-    res.json(updated);
+    if (status === "REJECTED") {
+      await prisma.todoShare.delete({ where: { id: inviteId } });
+      return res.json({ message: "Invite rejected and deleted." });
+    } else {
+      // Update status (e.g., ACCEPTED)
+      const updated = await prisma.todoShare.update({ where: { id: inviteId }, data: { status } });
+      return res.json(updated);
+    }
   } catch (err) {
     console.error(err);
     if (err.name === "ZodError") {
