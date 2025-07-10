@@ -21,6 +21,7 @@ model User {
   todos        Todo[]
   createdAt    DateTime @default(now())
   invitesSent  TodoShare[] @relation("UserInvitesSent")
+  receivedInvites TodoShare[] @relation("UserInvitesReceived")
 }
 
 model Todo {
@@ -47,6 +48,8 @@ model TodoShare {
   id               Int      @id @default(autoincrement())
   inviterUserId    Int      // the user who shared
   inviter          User     @relation("UserInvitesSent", fields: [inviterUserId], references: [id])
+  invitedUserId    Int      // the user who received
+  invitedUser      User     @relation("UserInvitesReceived", fields: [invitedUserId], references: [id])
   invitedUserEmail String
   permission       String // 'read' or 'write'
   status           InviteStatus @default(PENDING)

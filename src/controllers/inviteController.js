@@ -21,7 +21,7 @@ export const invite = async (req, res) => {
     const existing = await prisma.todoShare.findFirst({
       where: {
         inviterUserId: req.user.userId,
-        invitedUserEmail,
+        invitedUserId: invitedUser.id,
         status: { in: ["PENDING", "ACCEPTED"] },
       },
     });
@@ -30,6 +30,7 @@ export const invite = async (req, res) => {
     const invite = await prisma.todoShare.create({
       data: {
         inviterUserId: req.user.userId,
+        invitedUserId: invitedUser.id,
         invitedUserEmail,
         permission: "read",
         status: "PENDING",
@@ -53,7 +54,7 @@ export const listInvites = async (req, res) => {
       include: { inviter: true },
     });
     const receivedInvites = await prisma.todoShare.findMany({
-      where: { invitedUserEmail: req.user.email },
+      where: { invitedUserId: req.user.userId },
       orderBy: { createdAt: "desc" },
       include: { inviter: true },
     });
@@ -71,7 +72,7 @@ export const respondInvite = async (req, res) => {
     // Find invite
     const invite = await prisma.todoShare.findUnique({ where: { id: inviteId } });
     if (!invite) return res.status(404).json({ error: "Invite not found" });
-    if (invite.invitedUserEmail !== req.user.email) return res.status(403).json({ error: "Not your invite" });
+    if (invite.invitedUserId !== req.user.userId) return res.status(403).json({ error: "Not your invite" });
     if (invite.status !== "PENDING") return res.status(400).json({ error: "Invite already responded to" });
     if (status === "REJECTED") {
       await prisma.todoShare.delete({ where: { id: inviteId } });
@@ -94,7 +95,7 @@ export const listSharedTodos = async (req, res) => {
   try {
     // Find all accepted global shares for this user
     const shares = await prisma.todoShare.findMany({
-      where: { invitedUserEmail: req.user.email, status: "ACCEPTED" },
+      where: { invitedUserId: req.user.userId, status: "ACCEPTED" },
       include: { inviter: true },
     });
     // For each share, get all todos of the inviter
